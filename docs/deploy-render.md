@@ -1,8 +1,9 @@
 # Put the Follow-Up Agent on a server (Render)
 
 This puts the agent, its database and the demo dashboard on Render, so they keep running when your Mac is
-off. Allow about 30 minutes. It costs about **$20 a month**: the agent ($7), the dashboard ($7 plus $0.25 for
-its small disk) and the database ($6). You can delete everything from Render at any time to stop paying.
+off. Allow about 30 minutes. It costs about **$14 a month**: the agent (about $7) and the database (about $6 to $7).
+The dashboard is on Render's free plan, so after 15 minutes with nobody using it, the first page load takes up
+to a minute and you log in again. The agent keeps working the whole time. You can delete everything from Render at any time to stop paying.
 
 You never need to paste a key into a chat. Keys go only into Render, Google Cloud and your own Terminal.
 

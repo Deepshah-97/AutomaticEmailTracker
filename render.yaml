@@ -50,23 +50,21 @@ services:
     repo: https://github.com/deepshah-97/demotracker
     branch: main
     runtime: python
-    plan: 0.5c-512mb # needed for the disk that keeps the dashboard's SQLite file
+    # Free plan: sleeps after 15 idle minutes and has no disk, so its local cache and logins reset on
+    # restart. The agent holds all real data and retries webhooks while the dashboard wakes up.
+    plan: free
     region: oregon
     buildCommand: pip install uv && uv sync --frozen --no-dev
     startCommand: uv run --no-dev uvicorn --factory app.main:create_app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
     healthCheckPath: /login
     autoDeployTrigger: commit
-    disk:
-      name: dashboard-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.7"
       - key: UV_PYTHON_DOWNLOADS
         value: never
       - key: DATABASE_PATH
-        value: /var/data/dashboard.db
+        value: ./dashboard.db
       # The agent's public URL, e.g. https://followup-agent.onrender.com
       - key: AGENT_BASE_URL
         sync: false
