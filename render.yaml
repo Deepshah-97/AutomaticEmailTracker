@@ -7,7 +7,9 @@ services:
   - type: web
     name: followup-agent
     runtime: docker
-    plan: 0.5c-512mb # always on: the scheduler must keep running (free instances sleep)
+    # Free plan for demos: sleeps after 15 idle minutes, and while asleep it does no hourly checks or
+    # scheduled sends. Switch to a paid plan (e.g. 0.5c-512mb) before using it with real clients.
+    plan: free
     region: oregon
     healthCheckPath: /v1/health
     autoDeployTrigger: commit

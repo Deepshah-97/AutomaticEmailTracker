@@ -1,9 +1,14 @@
 # Put the Follow-Up Agent on a server (Render)
 
 This puts the agent and the demo dashboard on Render, and the database on Supabase, so they keep running when
-your Mac is off. Allow about 30 minutes. It costs about **$7 a month**, which is just the agent. The database
-is on Supabase's free plan, and the dashboard is on Render's free plan, so after 15 minutes with nobody using
-it, the first page load takes up to a minute and you log in again. The agent keeps working the whole time.
+your Mac is off. Allow about 30 minutes. It costs **$0**: the database is on Supabase's free plan, and the agent and dashboard
+are on Render's free plan.
+
+The catch with the free plan: when nobody has used an app for 15 minutes, Render puts it to sleep. The next
+visit wakes it, which takes up to a minute, and you log in to the dashboard again. While the agent is asleep it
+does no hourly Gmail checks and sends nothing, so it only works while you are using it. That is fine for a live
+demo. **Before a demo**, open **AGENT URL**`/v1/health` and your **DASHBOARD URL** a couple of minutes early so
+both are awake. See "Later: real clients" for the one change to make before using it for real.
 
 You never need to paste a key into a chat. Keys go only into Render, Supabase, Google Cloud and your own
 Terminal.
@@ -24,7 +29,8 @@ Terminal.
 1. Go to **render.com** and click **Get Started**. Sign up with **GitHub**.
 2. When GitHub asks which repositories Render can see, choose **Only select repositories** and pick both
    **AutomaticEmailTracker** and **DemoTracker**.
-3. In Render, open **Account Settings → Billing** and add a card.
+3. You don't need to add a card while everything is on the free plan. Render asks for one only when you
+   switch the agent to a paid plan later.
 
 ## 2. Create everything from the Blueprint
 
@@ -108,11 +114,13 @@ From now on the agent checks every hour by itself, even with your Mac off. You c
   the right address and put the new `api_key` and `webhook_secret` into the dashboard (step 5.3).
 - **A service shows "Failed":** open it, click **Logs**, and send the last red lines to Claude (they contain no
   keys).
+- **The dashboard shows an error about the agent right after waking up:** the agent was still asleep. Wait a
+  minute and reload the page.
 - **No draft appears:** check the agent's **Logs**; the usual cause is an unfunded Anthropic key.
 - **The agent fails with "could not connect" or "password authentication failed":** check `DATABASE_URL`
   in `followup-agent → Environment`. It must be the **Session pooler** string with your real password in it.
-- **Supabase emails that the project will be paused:** Supabase pauses free projects after a week with no
-  activity. The agent uses the database every minute, so this only happens if the agent is stopped.
+- **Supabase says the project is paused:** Supabase pauses free projects after a week with no use. Open the
+  project at supabase.com and click **Restore**, then wait a couple of minutes before opening the dashboard.
 - **Gmail shows "reconnect" after a week:** normal while your Google app is in Testing mode. Connect again.
 
 ## Later: real clients
@@ -124,9 +132,11 @@ when you create a task.
 
 To switch to real clients:
 
-1. In Render, open `followup-agent → Environment` and click **Edit**.
-2. Change `TEST_MODE` from `true` to `false`. You can leave `TEST_ALLOWLIST` as it is.
-3. Click **Save, rebuild, and deploy** and wait until it shows **Live**.
+1. In Render, open `followup-agent → Settings → Instance Type`, choose the smallest paid one (about $7 a
+   month), and save. A free agent sleeps and would miss the hourly checks and scheduled sends.
+2. In Render, open `followup-agent → Environment` and click **Edit**.
+3. Change `TEST_MODE` from `true` to `false`. You can leave `TEST_ALLOWLIST` as it is.
+4. Click **Save, rebuild, and deploy** and wait until it shows **Live**.
 
 What changes once it is off:
 
