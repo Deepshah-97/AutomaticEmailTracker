@@ -1,0 +1,83 @@
+# Render Blueprint: the follow-up agent, its Postgres database and the demo dashboard.
+# Deploy from the Render dashboard: New > Blueprint > pick this repository.
+# Values marked "sync: false" are asked for once when the Blueprint is created.
+
+databases:
+  - name: followup-db
+    plan: basic-256mb
+    region: oregon
+    postgresMajorVersion: "16"
+    databaseName: followup
+    user: agent
+
+services:
+  - type: web
+    name: followup-agent
+    runtime: docker
+    plan: starter # always on: the scheduler must keep running (free instances sleep)
+    region: oregon
+    healthCheckPath: /v1/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: followup-db
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      # Empty lets personal Gmail accounts connect. OAUTH_REDIRECT_URI defaults to
+      # <this service's public URL>/oauth/google/callback.
+      - key: GOOGLE_ALLOWED_DOMAINS
+        value: ""
+      - key: TOKEN_ENCRYPTION_KEY
+        generateValue: true
+      - key: ADMIN_API_KEY
+        generateValue: true
+      - key: SCHEDULER_ENABLED
+        value: "true"
+      - key: SENDING_ENABLED
+        value: "true"
+      - key: TEST_MODE
+        value: "true"
+      # Comma-separated: the only addresses that can send or receive while TEST_MODE is on.
+      - key: TEST_ALLOWLIST
+        sync: false
+
+  - type: web
+    name: followup-dashboard
+    repo: https://github.com/deepshah-97/demotracker
+    branch: main
+    runtime: python
+    plan: starter # needed for the disk that keeps the dashboard's SQLite file
+    region: oregon
+    buildCommand: pip install uv && uv sync --frozen --no-dev
+    startCommand: uv run --no-dev uvicorn --factory app.main:create_app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
+    healthCheckPath: /login
+    autoDeploy: true
+    disk:
+      name: dashboard-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: UV_PYTHON_DOWNLOADS
+        value: never
+      - key: DATABASE_PATH
+        value: /var/data/dashboard.db
+      # The agent's public URL, e.g. https://followup-agent.onrender.com
+      - key: AGENT_BASE_URL
+        sync: false
+      # Both come from the "api-clients" admin call after the agent is up.
+      - key: AGENT_API_KEY
+        sync: false
+      - key: AGENT_WEBHOOK_SECRET
+        sync: false
+      - key: DEMO_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
