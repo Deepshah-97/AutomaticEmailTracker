@@ -73,7 +73,8 @@ class GoogleGmail:
                 raise GmailSendRejected(f"Gmail refused the send ({status})") from exc
             if sending:
                 raise GmailSendUnknown(f"Gmail send failed ambiguously ({status})") from exc
-            raise GmailUnavailable(f"Gmail error {status}") from exc
+            # Keep Google's own reason (e.g. "Gmail API has not been used in project ...") for the operator.
+            raise GmailUnavailable(f"Gmail error {status}: {getattr(exc, 'reason', '') or exc}") from exc
         except (TransportError, TimeoutError, OSError) as exc:
             if sending:
                 raise GmailSendUnknown(str(exc)) from exc

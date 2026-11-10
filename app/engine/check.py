@@ -272,7 +272,7 @@ class FollowupEngine:
                 task = db.get(Task, task_id, with_for_update=True)
                 if task:
                     task.next_check_at = self.now() + timedelta(hours=1)
-                    webhooks.audit(db, "check.postponed", task, exc.__class__.__name__)
+                    webhooks.audit(db, "check.postponed", task, f"{exc.__class__.__name__}: {exc}"[:300])
             return "postponed"
         finally:
             self._release(task_id, worker)
