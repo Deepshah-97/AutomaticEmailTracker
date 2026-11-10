@@ -99,6 +99,25 @@ From now on the agent checks every hour by itself, even with your Mac off. You c
 
 ## Later: real clients
 
-The server starts in demo mode (`TEST_MODE=true`), so it only emails the addresses on `TEST_ALLOWLIST`. To use
-it with real clients, set `TEST_MODE` to `false` in `followup-agent → Environment`. Waiting days and office
-hours then apply as normal.
+`TEST_ALLOWLIST` is only for the demo. You never add client addresses to it. While `TEST_MODE` is `true`, the
+agent can only email the addresses on that list, which keeps the demo from reaching anyone real. When
+`TEST_MODE` is `false`, the list is ignored and the agent follows up with whoever is on the thread you pick
+when you create a task.
+
+To switch to real clients:
+
+1. In Render, open `followup-agent → Environment` and click **Edit**.
+2. Change `TEST_MODE` from `true` to `false`. You can leave `TEST_ALLOWLIST` as it is.
+3. Click **Save, rebuild, and deploy** and wait until it shows **Live**.
+
+What changes once it is off:
+
+- **Normal waits apply.** A task waits its scenario's business days before the first follow-up, so
+  **Run check now** won't produce a draft straight away like it does in the demo.
+- **Office hours apply.** Emails go out only between 08:30 and 17:30 on weekdays, in the salesperson's time
+  zone, with a short random delay of up to 40 minutes so they don't look automated.
+- **The daily cap applies:** at most 50 sends per salesperson per day.
+
+The only people you add are **salespeople** (the people whose Gmail sends the follow-ups), using the
+`/v1/admin/users` command from step 5. Each one then connects their Gmail from the dashboard's **Team** page.
+Clients are never added anywhere.
