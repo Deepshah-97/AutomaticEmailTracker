@@ -1,28 +1,21 @@
-# Render Blueprint: the follow-up agent, its Postgres database and the demo dashboard.
+# Render Blueprint: the follow-up agent and the demo dashboard. The Postgres database lives on
+# Supabase's free plan; paste its Session pooler connection string as DATABASE_URL.
 # Deploy from the Render dashboard: New > Blueprint > pick this repository.
 # Values marked "sync: false" are asked for once when the Blueprint is created.
-
-databases:
-  - name: followup-db
-    plan: 0.1c-256mb
-    region: oregon
-    postgresMajorVersion: "16"
-    databaseName: followup
-    user: agent
 
 services:
   - type: web
     name: followup-agent
     runtime: docker
-    plan: 0.5c-512mb # always on: the scheduler must keep running (free instances sleep)
+    # Free plan for demos: sleeps after 15 idle minutes, and while asleep it does no hourly checks or
+    # scheduled sends. Switch to a paid plan (e.g. 0.5c-512mb) before using it with real clients.
+    plan: free
     region: oregon
     healthCheckPath: /v1/health
     autoDeployTrigger: commit
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: followup-db
-          property: connectionString
+        sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: GOOGLE_CLIENT_ID
