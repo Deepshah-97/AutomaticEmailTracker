@@ -46,6 +46,10 @@ class DraftingUnavailable(Exception):
     pass
 
 
+class DraftingFailed(Exception):
+    """Claude refused the request (bad key, no credit, bad model): retrying will not help."""
+
+
 class ClaudeDrafter:
     def __init__(self, api_key: str, model: str, company_name: str, effort: str = "medium") -> None:
         import anthropic
@@ -92,7 +96,9 @@ class ClaudeDrafter:
         except anthropic.APIStatusError as exc:
             if exc.status_code >= 500:
                 raise DraftingUnavailable(str(exc)) from exc
-            raise
+            body = exc.body if isinstance(exc.body, dict) else {}
+            detail = (body.get("error") or {}).get("message") or exc.message
+            raise DraftingFailed(f"Claude API error {exc.status_code}: {detail}") from exc
 
         usage = resp.usage
         cost = self._cost(resp.model or self.model, usage)
