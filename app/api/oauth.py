@@ -87,7 +87,10 @@ def callback(request: Request, state: str = "", code: str = "", error: str = "")
         domain = email.rsplit("@", 1)[-1]
         problems = []
         if claims.get("aud") != settings.google_client_id:
-            problems.append("token audience mismatch")
+            problems.append(
+                f"token audience mismatch (Google issued it for {claims.get('aud')!r}, "
+                f"but GOOGLE_CLIENT_ID is {settings.google_client_id!r})"
+            )
         if claims.get("iss") not in (
             "https://accounts.google.com",
             "accounts.google.com",
@@ -100,7 +103,10 @@ def callback(request: Request, state: str = "", code: str = "", error: str = "")
         if settings.allowed_domains and (
             domain not in settings.allowed_domains or claims.get("hd", "").lower() not in settings.allowed_domains
         ):
-            problems.append("account is not in the company's Google Workspace")
+            problems.append(
+                "account is not in the company's Google Workspace "
+                "(leave GOOGLE_ALLOWED_DOMAINS empty to allow personal Gmail accounts)"
+            )
         if not REQUIRED_SCOPES <= granted:
             problems.append("Gmail read and send permissions were not granted")
         if not tokens.get("refresh_token"):

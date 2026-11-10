@@ -105,3 +105,23 @@ def test_gmail_outage_postpones_without_sending(env):
     env.box.fail_reads = True
     t = checked(env)
     assert t["status"] == "waiting" and env.drafts() == []
+    detail = [e["detail"] for e in env.task(t["id"])["timeline"] if e["type"] == "check.postponed"]
+    assert detail and "simulated outage" in detail[0]
+
+
+def test_gmail_http_error_keeps_googles_reason():
+    from unittest.mock import MagicMock
+
+    import pytest
+    from googleapiclient.errors import HttpError
+
+    from app.gmail.client import GmailUnavailable, GoogleGmail
+
+    gmail = GoogleGmail.__new__(GoogleGmail)
+    request = MagicMock()
+    request.execute.side_effect = HttpError(
+        MagicMock(status=403, reason="Forbidden"),
+        b'{"error": {"message": "Gmail API has not been used in project 123 before or it is disabled."}}',
+    )
+    with pytest.raises(GmailUnavailable, match="Gmail API has not been used"):
+        gmail._call(request)

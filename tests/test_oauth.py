@@ -101,3 +101,23 @@ def test_invalid_grant_disconnects_and_pauses(env):
         assert u.gmail_status == "disconnected" and u.google_refresh_token is None
     assert "user.disconnected" in env.event_names()
     assert env.c.get("/v1/users", headers=env.h()).json()["data"][0]["gmail_connected"] is False
+
+
+def test_audience_mismatch_names_both_client_ids(oauth_env):
+    oauth_env.tokens = {"refresh_token": "x", "id_token": id_token(aud="other-client"), "scope": SCOPE}
+    r = oauth_env.c.get(f"/oauth/google/callback?state={start(oauth_env)}&code=abc")
+    assert r.status_code == 403 and "other-client" in r.text and "cid.apps.googleusercontent.com" in r.text
+
+
+def test_personal_gmail_allowed_when_no_domains(make_env):
+    env = make_env(google_allowed_domains="")
+    env.tokens = {"refresh_token": "1//r", "id_token": id_token(hd=""), "scope": SCOPE}
+    env.app.state.oauth_exchange = lambda code, settings: env.tokens
+    assert env.c.get(f"/oauth/google/callback?state={start(env)}&code=abc").status_code == 200
+
+
+def test_pasted_google_settings_are_cleaned():
+    from .conftest import make_settings
+
+    s = make_settings(google_client_id=" “cid.apps.googleusercontent.com” ", google_allowed_domains='"" ')
+    assert s.google_client_id == "cid.apps.googleusercontent.com" and s.allowed_domains == set()

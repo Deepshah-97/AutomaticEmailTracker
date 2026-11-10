@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -39,6 +40,12 @@ class Settings(BaseSettings):
     send_failure_alert_per_hour: int = 3
     followup_retention_days: int = 180
     thread_token_budget: int = 12000
+
+    @field_validator("google_client_id", "google_client_secret", "google_allowed_domains", mode="before")
+    @classmethod
+    def _clean(cls, v: str) -> str:
+        # Values pasted into .env from a browser or TextEdit can carry spaces or smart quotes.
+        return v.strip().strip("\"'\u201c\u201d\u2018\u2019").strip() if isinstance(v, str) else v
 
     @property
     def allowlist(self) -> set[str]:
