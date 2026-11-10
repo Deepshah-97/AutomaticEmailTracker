@@ -4,7 +4,7 @@
 
 databases:
   - name: followup-db
-    plan: basic-256mb
+    plan: 0.1c-256mb
     region: oregon
     postgresMajorVersion: "16"
     databaseName: followup
@@ -14,10 +14,10 @@ services:
   - type: web
     name: followup-agent
     runtime: docker
-    plan: starter # always on: the scheduler must keep running (free instances sleep)
+    plan: 0.5c-512mb # always on: the scheduler must keep running (free instances sleep)
     region: oregon
     healthCheckPath: /v1/health
-    autoDeploy: true
+    autoDeployTrigger: commit
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -29,10 +29,8 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
-      # Empty lets personal Gmail accounts connect. OAUTH_REDIRECT_URI defaults to
-      # <this service's public URL>/oauth/google/callback.
-      - key: GOOGLE_ALLOWED_DOMAINS
-        value: ""
+      # GOOGLE_ALLOWED_DOMAINS is left unset so personal Gmail accounts can connect.
+      # OAUTH_REDIRECT_URI defaults to <this service's public URL>/oauth/google/callback.
       - key: TOKEN_ENCRYPTION_KEY
         generateValue: true
       - key: ADMIN_API_KEY
@@ -52,12 +50,12 @@ services:
     repo: https://github.com/deepshah-97/demotracker
     branch: main
     runtime: python
-    plan: starter # needed for the disk that keeps the dashboard's SQLite file
+    plan: 0.5c-512mb # needed for the disk that keeps the dashboard's SQLite file
     region: oregon
     buildCommand: pip install uv && uv sync --frozen --no-dev
     startCommand: uv run --no-dev uvicorn --factory app.main:create_app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
     healthCheckPath: /login
-    autoDeploy: true
+    autoDeployTrigger: commit
     disk:
       name: dashboard-data
       mountPath: /var/data
