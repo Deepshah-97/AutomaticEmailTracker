@@ -1,11 +1,23 @@
 # Put the Follow-Up Agent on a server (Render)
 
-This puts the agent, its database and the demo dashboard on Render, so they keep running when your Mac is
-off. Allow about 30 minutes. It costs about **$14 a month**: the agent (about $7) and the database (about $6 to $7).
-The dashboard is on Render's free plan, so after 15 minutes with nobody using it, the first page load takes up
-to a minute and you log in again. The agent keeps working the whole time. You can delete everything from Render at any time to stop paying.
+This puts the agent and the demo dashboard on Render, and the database on Supabase, so they keep running when
+your Mac is off. Allow about 30 minutes. It costs about **$7 a month**, which is just the agent. The database
+is on Supabase's free plan, and the dashboard is on Render's free plan, so after 15 minutes with nobody using
+it, the first page load takes up to a minute and you log in again. The agent keeps working the whole time.
 
-You never need to paste a key into a chat. Keys go only into Render, Google Cloud and your own Terminal.
+You never need to paste a key into a chat. Keys go only into Render, Supabase, Google Cloud and your own
+Terminal.
+
+## 0. Create the free database (Supabase)
+
+1. Go to **supabase.com**, click **Start your project**, and sign up (GitHub sign-in is fine).
+2. Click **New project**. Name it `followup`, click **Generate a password**, and copy that password somewhere
+   safe on your Mac. Pick the region closest to **US West (Oregon)**, and click **Create new project**. Wait
+   about a minute.
+3. Click **Connect** at the top of the project page. Under **Connection string**, choose the **Session
+   pooler** one (not "Direct connection"). Copy it.
+4. In that copied text, replace `[YOUR-PASSWORD]` with the password from step 2. This full line is your
+   **DATABASE URL**. Keep it handy for the next part.
 
 ## 1. Create a Render account
 
@@ -18,12 +30,13 @@ You never need to paste a key into a chat. Keys go only into Render, Google Clou
 
 1. In Render, click **New → Blueprint**.
 2. Pick the **AutomaticEmailTracker** repository and click **Connect**. Render reads the `render.yaml` file
-   and lists three things: `followup-db`, `followup-agent` and `followup-dashboard`.
+   and lists two things: `followup-agent` and `followup-dashboard`.
 3. Give the Blueprint any name, such as `followup`.
 4. Render asks for a few values. Fill them in like this:
 
    | Setting | What to type |
    |---|---|
+   | `DATABASE_URL` | Your **DATABASE URL** from step 0 |
    | `ANTHROPIC_API_KEY` | Your Anthropic key (the same one in your Mac's `.env`) |
    | `GOOGLE_CLIENT_ID` | Same as your Mac's `.env` |
    | `GOOGLE_CLIENT_SECRET` | Same as your Mac's `.env` |
@@ -96,6 +109,10 @@ From now on the agent checks every hour by itself, even with your Mac off. You c
 - **A service shows "Failed":** open it, click **Logs**, and send the last red lines to Claude (they contain no
   keys).
 - **No draft appears:** check the agent's **Logs**; the usual cause is an unfunded Anthropic key.
+- **The agent fails with "could not connect" or "password authentication failed":** check `DATABASE_URL`
+  in `followup-agent → Environment`. It must be the **Session pooler** string with your real password in it.
+- **Supabase emails that the project will be paused:** Supabase pauses free projects after a week with no
+  activity. The agent uses the database every minute, so this only happens if the agent is stopped.
 - **Gmail shows "reconnect" after a week:** normal while your Google app is in Testing mode. Connect again.
 
 ## Later: real clients
