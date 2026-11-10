@@ -49,6 +49,11 @@ curl -X POST localhost:8000/v1/admin/api-clients -H "Authorization: Bearer $ADMI
 
 Then turn on `SENDING_ENABLED=true` when you are ready for real emails to go out.
 
+## Deploy
+
+`render.yaml` is a Render Blueprint for the agent, a Postgres database and the demo dashboard. Step-by-step
+instructions are in [docs/deploy-render.md](docs/deploy-render.md).
+
 ## How it works
 
 - **Checks** run hourly. A task becomes due after its wait (business days, owner's time zone) from the

@@ -1,6 +1,7 @@
+import os
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -46,6 +47,24 @@ class Settings(BaseSettings):
     def _clean(cls, v: str) -> str:
         # Values pasted into .env from a browser or TextEdit can carry spaces or smart quotes.
         return v.strip().strip("\"'\u201c\u201d\u2018\u2019").strip() if isinstance(v, str) else v
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _psycopg_driver(cls, v: str) -> str:
+        # Hosts such as Render hand out postgres:// or postgresql:// URLs; this app uses psycopg 3.
+        if isinstance(v, str):
+            for prefix in ("postgres://", "postgresql://"):
+                if v.startswith(prefix):
+                    return "postgresql+psycopg://" + v[len(prefix) :]
+        return v
+
+    @model_validator(mode="after")
+    def _public_redirect_uri(self) -> "Settings":
+        # On Render, default the Google redirect URI to this service's public URL.
+        external = os.environ.get("RENDER_EXTERNAL_URL", "").rstrip("/")
+        if external and "oauth_redirect_uri" not in self.model_fields_set:
+            self.oauth_redirect_uri = external + "/oauth/google/callback"
+        return self
 
     @property
     def allowlist(self) -> set[str]:
