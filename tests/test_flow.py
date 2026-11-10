@@ -227,3 +227,30 @@ def test_owner_from_other_client_is_forbidden(env):
 
 def test_owner_email_constant():
     assert OWNER.endswith("@company.com")
+
+
+def test_drafting_failure_is_shown_on_the_task(env):
+    from app.ai.draft import DraftingFailed
+
+    def fail(ctx, feedback=None):
+        raise DraftingFailed("Claude API error 401: invalid x-api-key")
+
+    env.drafter.draft = fail
+    env.seed_thread()
+    task = env.create_task()
+    run(env, task["id"])
+    t = env.task(task["id"])
+    assert t["paused"] and t["pause_reason"] == "drafting_failed" and "invalid x-api-key" in t["error_message"]
+    assert "task.error" in env.event_names(task["id"])
+
+
+def test_unexpected_check_error_is_shown_on_the_task(env):
+    def boom(ctx, feedback=None):
+        raise RuntimeError("something odd")
+
+    env.drafter.draft = boom
+    env.seed_thread()
+    task = env.create_task()
+    run(env, task["id"])
+    t = env.task(task["id"])
+    assert t["pause_reason"] == "check_failed" and "RuntimeError: something odd" in t["error_message"]

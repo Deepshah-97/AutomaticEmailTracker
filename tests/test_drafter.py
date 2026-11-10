@@ -110,3 +110,26 @@ def test_feedback_is_included_on_retry():
     )
     d.draft(ctx(), feedback=["draft is 160 words (limit 150)"])
     assert "limit 150" in calls[0]["messages"][0]["content"]
+
+
+def test_client_error_becomes_drafting_failed_with_claudes_message():
+    import anthropic
+    import httpx
+    import pytest
+
+    from app.ai.draft import DraftingFailed
+
+    d = ClaudeDrafter("k", "claude-sonnet-5-5", "Company")
+    body = {"type": "error", "error": {"type": "invalid_request_error", "message": "Your credit balance is too low"}}
+    err = anthropic.BadRequestError(
+        "Error code: 400",
+        response=httpx.Response(400, request=httpx.Request("POST", "https://api.anthropic.com/v1/messages")),
+        body=body,
+    )
+
+    def parse(**kw):
+        raise err
+
+    d._client = SimpleNamespace(beta=SimpleNamespace(messages=SimpleNamespace(parse=parse)))
+    with pytest.raises(DraftingFailed, match="400: Your credit balance is too low"):
+        d.draft(ctx())

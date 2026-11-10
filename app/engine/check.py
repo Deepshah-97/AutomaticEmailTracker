@@ -22,7 +22,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..ai.context import SCENARIO_GOALS, DraftContext
-from ..ai.draft import Drafter, DraftingUnavailable, DraftResult
+from ..ai.draft import Drafter, DraftingFailed, DraftingUnavailable, DraftResult
 from ..config import Settings
 from ..core import webhooks
 from ..core.crypto import TokenCipher
@@ -274,6 +274,15 @@ class FollowupEngine:
                     task.next_check_at = self.now() + timedelta(hours=1)
                     webhooks.audit(db, "check.postponed", task, f"{exc.__class__.__name__}: {exc}"[:300])
             return "postponed"
+        except DraftingFailed as exc:
+            log.error("Check of %s failed: %s", task_id, exc)
+            self.needs_review(task_id, "drafting_failed", str(exc)[:500])
+            return "drafting_failed"
+        except Exception as exc:
+            # Never fail silently: surface the error on the task so the dashboard shows it.
+            log.exception("Check of %s failed unexpectedly", task_id)
+            self.needs_review(task_id, "check_failed", f"{exc.__class__.__name__}: {exc}"[:500])
+            return "check_failed"
         finally:
             self._release(task_id, worker)
 
