@@ -58,6 +58,10 @@ services:
         value: never
       - key: DATABASE_PATH
         value: ./dashboard.db
+      # A free agent can take up to a minute to wake from sleep; wait for it instead of
+      # showing "Agent unavailable".
+      - key: AGENT_TIMEOUT_SECONDS
+        value: "75"
       # The agent's public URL, e.g. https://followup-agent.onrender.com
       - key: AGENT_BASE_URL
         sync: false
