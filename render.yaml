@@ -29,10 +29,8 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
-      # Empty lets personal Gmail accounts connect. OAUTH_REDIRECT_URI defaults to
-      # <this service's public URL>/oauth/google/callback.
-      - key: GOOGLE_ALLOWED_DOMAINS
-        value: ""
+      # GOOGLE_ALLOWED_DOMAINS is left unset so personal Gmail accounts can connect.
+      # OAUTH_REDIRECT_URI defaults to <this service's public URL>/oauth/google/callback.
       - key: TOKEN_ENCRYPTION_KEY
         generateValue: true
       - key: ADMIN_API_KEY
